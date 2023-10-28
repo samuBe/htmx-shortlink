@@ -4,7 +4,9 @@ import { Elysia, t } from "elysia";
 import { html } from "@elysiajs/html";
 import Html from "@kitajs/html";
 import staticPlugin from "@elysiajs/static";
-import { string, z } from "zod";
+import "dotenv/config";
+import { createLink, getLongLink } from "./db/dynamo";
+import { nanoid } from "nanoid";
 
 const Layout = (props: Html.PropsWithChildren<{ title?: string }>) => {
   return (
@@ -39,14 +41,6 @@ const isValidUrl = (urlString: string) => {
   return !!urlPattern.test(urlString);
 };
 
-const BigButton = (props: Html.PropsWithChildren<{ attributes }>) => {
-  return (
-    <div {attributes} >
-      {props.children}
-    </div>
-  );
-};
-
 const UrlEntry = (
   props: Html.PropsWithChildren<{ url?: string; errors?: string }>
 ) => {
@@ -65,24 +59,21 @@ const UrlEntry = (
           class="p-4 rounded-lg text-xl"
           autofocus="true"
         ></input>
-          <button hx-post="/submit" hx-swap="innerHtml" hx-target="#container" id="submit" class="border-black p-8 border-2 text-3xl bg-slate-400 font-bold rounded-lg">
-            SHORTEN MY URL!
-          </button>
+        <button
+          hx-post="/submit"
+          hx-swap="innerHtml"
+          hx-target="#container"
+          id="submit"
+          class="border-black p-8 border-2 text-3xl bg-slate-400 font-bold rounded-lg"
+        >
+          SHORTEN MY URL!
+        </button>
       </div>
       <p id="error" class="text-red-600 h-6">
         {props.errors ?? ""}
       </p>
     </form>
   );
-};
-
-interface KeyVal {
-  [key: string]: string;
-}
-
-const links: KeyVal = {
-  "1": "https://sambe.uk",
-  "2": "https://samuelberton.com",
 };
 
 let maxId = 2;
@@ -120,49 +111,105 @@ const app = new Elysia()
     "/submit",
     ({ body }) => {
       const link = body.link;
-      if (!isValidUrl(link)) {
-        return <UrlEntry />;
+      if (link.length < 1) {
+        return <UrlEntry url={link} errors="Enter something!" />;
       }
-      const id = maxId + 1;
-      maxId++;
-      links[id.toString()] = body.link;
-      const shorturl = `https://localhost:3000/${id.toString()}`;
-      return (
-        <>
-        <div class="p-4 flex flex-col gap-4">
-          <script>var clipboard = new ClipboardJS("#copy")</script>
-          <p id="short-url" class="p-4 rounded-lg text-xl bg-white text-black">
-            {shorturl}
-          </p>
-          <div class="gap-2 flex flex-row justify-around">
-            <a class="border-2 border-black grow bg-slate-400 justify-center flex align-middle p-1 rounded-lg" href={shorturl}>
-            <img alt="goto" class="object-scale-down h-24" src="/public/goto.svg"></img>
-            </a>
-            <button class="border-2 p-1 rounded-lg border-black grow flex bg-slate-400 align-middle justify-center" id="copy" hx-get="/copy" hx-target="#error" data-clipboard-text={`${shorturl}`}>
-            <img alt="copy" src="/public/copy.svg" class="object-scale-down h-24"></img>
-            </button>
-            <button class="border-2 border-black grow flex items-center p-1 justify-center align-middle bg-slate-400 rounded-lg" hx-get="/redo" hx-target="#container" hx-swap="innerHtml">
-            <img src="/public/redo.svg" class="object-scale-down h-24" alt="redo"></img>
-            </button>
-          </div>
-        </div>
-      <p id="error" class="text-black h-6"></p>
-        </>
-      );
+      if (!isValidUrl(link)) {
+        return <UrlEntry url={link} errors="Not a valid URL" />;
+      }
+      try {
+        const id = nanoid(8);
+        createLink({ longLink: link, shortLink: id });
+        const shorturl = `${process.env.LINK}/${id.toString()}`;
+        return (
+          <>
+            <div class="p-4 flex flex-col gap-4">
+              <script>var clipboard = new ClipboardJS("#copy")</script>
+              <p
+                id="short-url"
+                class="p-4 rounded-lg text-xl bg-white text-black"
+              >
+                {shorturl}
+              </p>
+              <div class="gap-2 flex flex-row justify-around">
+                <a
+                  class="border-2 border-black grow bg-slate-400 justify-center flex align-middle p-1 rounded-lg"
+                  href={shorturl}
+                >
+                  <img
+                    alt="goto"
+                    class="object-scale-down h-24"
+                    src="/public/goto.svg"
+                  ></img>
+                </a>
+                <button
+                  class="border-2 p-1 rounded-lg border-black grow flex bg-slate-400 align-middle justify-center"
+                  id="copy"
+                  hx-get="/copy"
+                  hx-target="#error"
+                  data-clipboard-text={`${shorturl}`}
+                >
+                  <img
+                    alt="copy"
+                    src="/public/copy.svg"
+                    class="object-scale-down h-24"
+                  ></img>
+                </button>
+                <button
+                  class="border-2 border-black grow flex items-center p-1 justify-center align-middle bg-slate-400 rounded-lg"
+                  hx-get="/redo"
+                  hx-target="#container"
+                  hx-swap="innerHtml"
+                >
+                  <img
+                    src="/public/redo.svg"
+                    class="object-scale-down h-24"
+                    alt="redo"
+                  ></img>
+                </button>
+              </div>
+            </div>
+            <p id="error" class="text-black h-6"></p>
+          </>
+        );
+      } catch (error) {
+        console.log(error);
+        return (
+          <UrlEntry
+            url={link}
+            errors="Something went wrong please try again!"
+          />
+        );
+      }
     },
     { body: t.Object({ link: t.String() }) }
   )
   .get("/copy", () => "Copied your short url!")
-  .get("/:id", ({ params: { id }, set }) => {
-    const re = links[id];
-    if (!re) {
-      set.status = 404;
-      set.redirect = "/";
-      return;
+  .get(
+    "/:id",
+    async ({ params: { id }, set }) => {
+      try {
+        const re = await getLongLink(id);
+        if (!re) {
+          set.status = 404;
+          set.redirect = "/";
+          return;
+        }
+        set.status = 302;
+        set.redirect = re;
+      } catch (error) {
+        console.log(error);
+        set.status = 404;
+        set.redirect = "/";
+        return;
+      }
+    },
+    {
+      params: t.Object({
+        id: t.String(),
+      }),
     }
-    set.status = 302;
-    set.redirect = re;
-  })
+  )
   .get("/redo", ({}) => {
     return <UrlEntry url={""} />;
   })
