@@ -3,7 +3,8 @@
   "version": "1.0.50",
   "scripts": {
     "test": "xss-scan",
-    "dev": "bun run --watch src/index.tsx"
+    "dev": "bun run --watch src/index.tsx",
+    "start": "bun src/index.tsx"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.438.0",

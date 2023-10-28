@@ -16,6 +16,7 @@ const Layout = (props: Html.PropsWithChildren<{ title?: string }>) => {
         <head>
           <meta charset="UTF-8" />
           <title>Short links by Samuel</title>
+          <link rel="icon" type="image/x-icon" href="/public/favicon.ico" />
           <link href="/public/output.css" rel="stylesheet" />
           <script src="/public/htmx.min.js"></script>
           <script src="https://unpkg.com/clipboard@2/dist/clipboard.min.js"></script>
