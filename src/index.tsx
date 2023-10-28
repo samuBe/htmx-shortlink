@@ -23,6 +23,32 @@ const Layout = (props: Html.PropsWithChildren<{ title?: string }>) => {
         </head>
         <body class="flex bg-gradient-to-r from-slate-400 to-slate-200 align-middle items-center h-screen w-screen">
           {props.children}
+          <footer class="fixed bottom-0 flex flex-col w-screen items-center justify-center text-xl pb-8">
+            <div>
+              Made by{" "}
+              <a
+                href="https://samuelberton.com"
+                class="underline text-blue-600"
+              >
+                Samuel Berton
+              </a>
+              , using{" "}
+              <a href="https://htmx.org" class="underline text-blue-600">
+                HTMX
+              </a>
+              .
+            </div>
+            <div>
+              More info on{" "}
+              <a
+                class="text-blue-600 underline"
+                href="https://github.com/samube"
+              >
+                GitHub
+              </a>
+              .
+            </div>
+          </footer>
         </body>
       </html>
     </>
