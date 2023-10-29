@@ -15,6 +15,10 @@ const Layout = (props: Html.PropsWithChildren<{ title?: string }>) => {
       <html lang="en" hx-boost>
         <head>
           <meta charset="UTF-8" />
+          <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0"
+          />
           <title>Short links by Samuel</title>
           <link rel="icon" type="image/x-icon" href="/public/favicon.ico" />
           <link href="/public/output.css" rel="stylesheet" />
@@ -96,7 +100,7 @@ const UrlEntry = (
           SHORTEN MY URL!
         </button>
       </div>
-      <p id="error" class="text-red-600 h-6">
+      <p id="error" class="text-red-600 h-6 font-bold">
         {props.errors ?? ""}
       </p>
     </form>
@@ -111,7 +115,7 @@ const app = new Elysia()
   .get("/", () => (
     <Layout>
       <div class="flex flex-col">
-        <h1 class="text-5xl text-center font-extrabold justify-center align-middle">
+        <h1 class="text-4xl font-extrabold text-center p-2">
           Generate short links using HTMX
         </h1>
         <div class="p-6" id="container">
