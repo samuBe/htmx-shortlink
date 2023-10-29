@@ -23,7 +23,7 @@ const Layout = (props: Html.PropsWithChildren<{ title?: string }>) => {
           <link rel="icon" type="image/x-icon" href="/public/favicon.ico" />
           <link href="/public/output.css" rel="stylesheet" />
           <script src="/public/htmx.min.js"></script>
-          <script src="https://unpkg.com/clipboard@2/dist/clipboard.min.js"></script>
+          <script src="/public/clipboard.min.js"></script>
         </head>
         <body class="flex bg-gradient-to-r from-slate-50 to-slate-200 align-middle justify-center items-center h-screen w-screen">
           {props.children}
