@@ -16,6 +16,10 @@ const Layout = (props: Html.PropsWithChildren<{ title?: string }>) => {
         <head>
           <meta charset="UTF-8" />
           <meta
+            name="description"
+            content="A short link generator, made using HTMX"
+          />
+          <meta
             name="viewport"
             content="width=device-width, initial-scale=1.0"
           />
@@ -23,7 +27,7 @@ const Layout = (props: Html.PropsWithChildren<{ title?: string }>) => {
           <link rel="icon" type="image/x-icon" href="/public/favicon.ico" />
           <link href="/public/output.css" rel="stylesheet" />
           <script src="/public/htmx.min.js"></script>
-          <script src="/public/clipboard.min.js"></script>
+          <script defer src="/public/clipboard.min.js"></script>
         </head>
         <body class="flex bg-gradient-to-r from-slate-50 to-slate-200 align-middle justify-center items-center h-screen w-screen">
           {props.children}
@@ -79,10 +83,6 @@ const isValidUrl = (urlString: string) => {
     `^${escapeRegExp(new URL(process.env.LINK).hostname ?? "localhost:3000")}`,
     "i"
   );
-
-  console.log(new URL(urlString).hostname);
-
-  console.log(!domainRegex.test(new URL(urlString).hostname));
 
   // Test if the URL matches the regular expression
   return (
@@ -233,6 +233,11 @@ const app = new Elysia()
     { body: t.Object({ link: t.String() }) }
   )
   .get("/copy", () => "Copied your short url!")
+  .get("/robots.txt", ({ set }) => {
+    set.redirect = "/public/robots.txt";
+    set.status = 302;
+    return;
+  })
   .get(
     "/:id",
     async ({ params: { id }, set }) => {
