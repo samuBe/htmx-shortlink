@@ -76,14 +76,18 @@ const isValidUrl = (urlString: string) => {
   ); // validate fragment locator
 
   const domainRegex = new RegExp(
-    `^${escapeRegExp(process.env.LINK ?? "localhost:3000")}`,
+    `^${escapeRegExp(new URL(process.env.LINK).hostname ?? "localhost:3000")}`,
     "i"
   );
+
+  console.log(new URL(urlString).hostname);
+
+  console.log(!domainRegex.test(new URL(urlString).hostname));
 
   // Test if the URL matches the regular expression
   return (
     !!urlPattern.test(urlString) &&
-    !!domainRegex.test(new URL(urlString).hostname)
+    !domainRegex.test(new URL(urlString).hostname)
   );
 };
 
