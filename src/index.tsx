@@ -21,7 +21,7 @@ const Layout = (props: Html.PropsWithChildren<{ title?: string }>) => {
           <script src="/public/htmx.min.js"></script>
           <script src="https://unpkg.com/clipboard@2/dist/clipboard.min.js"></script>
         </head>
-        <body class="flex bg-gradient-to-r from-slate-400 to-slate-200 align-middle items-center h-screen w-screen">
+        <body class="flex bg-gradient-to-r from-slate-50 to-slate-200 align-middle justify-center items-center h-screen w-screen">
           {props.children}
           <footer class="fixed bottom-0 flex flex-col w-screen items-center justify-center text-xl pb-8">
             <div>
@@ -110,14 +110,12 @@ const app = new Elysia()
   .use(staticPlugin())
   .get("/", () => (
     <Layout>
-      <div class="flex bg-gradient-to-r from-slate-400 to-slate-200 align-middle justify-center items-center h-screen w-screen">
-        <div class="flex flex-col">
-          <h1 class="text-5xl text-center font-extrabold justify-center align-middle">
-            Generate short links using HTMX
-          </h1>
-          <div class="p-6" id="container">
-            <UrlEntry />
-          </div>
+      <div class="flex flex-col">
+        <h1 class="text-5xl text-center font-extrabold justify-center align-middle">
+          Generate short links using HTMX
+        </h1>
+        <div class="p-6" id="container">
+          <UrlEntry />
         </div>
       </div>
     </Layout>
