@@ -59,8 +59,13 @@ const Layout = (props: Html.PropsWithChildren<{ title?: string }>) => {
   );
 };
 
+function escapeRegExp(str: string) {
+  // Escape special characters in a string
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 const isValidUrl = (urlString: string) => {
-  var urlPattern = new RegExp(
+  const urlPattern = new RegExp(
     "^(https?:\\/\\/)?" + // validate protocol
       "((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|" + // validate domain name
       "((\\d{1,3}\\.){3}\\d{1,3}))" + // validate OR ip (v4) address
@@ -69,7 +74,17 @@ const isValidUrl = (urlString: string) => {
       "(\\#[-a-z\\d_]*)?$",
     "i"
   ); // validate fragment locator
-  return !!urlPattern.test(urlString);
+
+  const domainRegex = new RegExp(
+    `^${escapeRegExp(process.env.LINK ?? "localhost:3000")}`,
+    "i"
+  );
+
+  // Test if the URL matches the regular expression
+  return (
+    !!urlPattern.test(urlString) &&
+    !!domainRegex.test(new URL(urlString).hostname)
+  );
 };
 
 const UrlEntry = (
