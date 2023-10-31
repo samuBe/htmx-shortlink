@@ -5,7 +5,7 @@ import { html } from "@elysiajs/html";
 import Html from "@kitajs/html";
 import staticPlugin from "@elysiajs/static";
 import "dotenv/config";
-import { createLink, getLongLink } from "./db/dynamo";
+import { createLink, getLongLink } from "./db/helpers";
 import { nanoid } from "nanoid";
 
 const Layout = (props: Html.PropsWithChildren<{ title?: string }>) => {
@@ -80,7 +80,9 @@ const isValidUrl = (urlString: string) => {
   ); // validate fragment locator
 
   const domainRegex = new RegExp(
-    `^${escapeRegExp(new URL(process.env.LINK).hostname ?? "localhost:3000")}`,
+    `^${escapeRegExp(
+      new URL(process.env.LINK as string).hostname ?? "localhost:3000"
+    )}`,
     "i"
   );
 
@@ -266,7 +268,7 @@ const app = new Elysia()
   .get("/redo", ({}) => {
     return <UrlEntry url={""} />;
   })
-  .listen(process.env.PORT);
+  .listen(process.env.PORT ?? 3000);
 
 console.log(
   `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
