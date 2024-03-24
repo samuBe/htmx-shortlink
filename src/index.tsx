@@ -10,56 +10,44 @@ import { nanoid } from "nanoid";
 
 const Layout = (props: Html.PropsWithChildren<{ title?: string }>) => {
   return (
-    <>
-      {"<!doctype html>"}
-      <html lang="en" hx-boost>
-        <head>
-          <meta charset="UTF-8" />
-          <meta
-            name="description"
-            content="A short link generator, made using HTMX"
-          />
-          <meta
-            name="viewport"
-            content="width=device-width, initial-scale=1.0"
-          />
-          <title>Short links by Samuel</title>
-          <link rel="icon" type="image/x-icon" href="/public/favicon.ico" />
-          <link href="/public/output.css" rel="stylesheet" />
-          <script src="/public/htmx.min.js"></script>
-          <script defer src="/public/clipboard.min.js"></script>
-        </head>
-        <body class="flex bg-gradient-to-r from-slate-50 to-slate-200 align-middle justify-center items-center h-screen w-screen">
-          {props.children}
-          <footer class="fixed bottom-0 flex flex-col w-screen items-center justify-center text-xl pb-8">
-            <div>
-              Made by{" "}
-              <a
-                href="https://samuelberton.com"
-                class="underline text-blue-600"
-              >
-                Samuel Berton
-              </a>
-              , using{" "}
-              <a href="https://htmx.org" class="underline text-blue-600">
-                HTMX
-              </a>
-              .
-            </div>
-            <div>
-              More info on{" "}
-              <a
-                class="text-blue-600 underline"
-                href="https://github.com/samube"
-              >
-                GitHub
-              </a>
-              .
-            </div>
-          </footer>
-        </body>
-      </html>
-    </>
+    <html lang="en" hx-boost>
+      <head>
+        <meta charset="UTF-8" />
+        <meta
+          name="description"
+          content="A short link generator, made using HTMX"
+        />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Short links by Samuel</title>
+        <link rel="icon" type="image/x-icon" href="/public/favicon.ico" />
+        <link href="/public/output.css" rel="stylesheet" />
+        <script src="/public/htmx.min.js"></script>
+        <script defer src="/public/clipboard.min.js"></script>
+      </head>
+      <body class="flex bg-gradient-to-r from-slate-50 to-slate-200 align-middle justify-center items-center h-screen w-screen">
+        {props.children}
+        <footer class="fixed bottom-0 flex flex-col w-screen items-center justify-center text-xl pb-8">
+          <div>
+            Made by{" "}
+            <a href="https://samuelberton.com" class="underline text-blue-600">
+              Samuel Berton
+            </a>
+            , using{" "}
+            <a href="https://htmx.org" class="underline text-blue-600">
+              HTMX
+            </a>
+            .
+          </div>
+          <div>
+            More info on{" "}
+            <a class="text-blue-600 underline" href="https://github.com/samube">
+              GitHub
+            </a>
+            .
+          </div>
+        </footer>
+      </body>
+    </html>
   );
 };
 
@@ -145,6 +133,7 @@ const app = new Elysia()
       </div>
     </Layout>
   ))
+  .get("/hello", () => <html>hello</html>)
   .post(
     "/validate",
     ({ body }) => {
