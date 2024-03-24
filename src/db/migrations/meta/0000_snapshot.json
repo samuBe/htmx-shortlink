@@ -1,25 +1,24 @@
 {
-  "version": "5",
-  "dialect": "sqlite",
-  "id": "43b34114-d7de-4630-aeed-6013414c4d74",
+  "id": "5525f5cc-1679-4c7e-ab73-2f16fb36a2f0",
   "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "5",
+  "dialect": "pg",
   "tables": {
     "links": {
       "name": "links",
+      "schema": "",
       "columns": {
         "short-link": {
           "name": "short-link",
           "type": "text",
           "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
+          "notNull": true
         },
         "long-link": {
           "name": "long-link",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
           "default": "'/'"
         }
       },
@@ -30,9 +29,10 @@
     }
   },
   "enums": {},
+  "schemas": {},
   "_meta": {
+    "columns": {},
     "schemas": {},
-    "tables": {},
-    "columns": {}
+    "tables": {}
   }
 }

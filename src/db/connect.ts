@@ -1,11 +1,10 @@
-import { createClient } from "@libsql/client";
-import { drizzle } from "drizzle-orm/libsql";
+import "dotenv/config";
+
+import postgres from "postgres";
+import { drizzle } from "drizzle-orm/postgres-js";
 import { links } from "./schema";
 
-const client = createClient({
-  url: process.env.DBLINK as string,
-  authToken: process.env.DBTOKEN as string,
-});
+const client = postgres(process.env.DBLINK);
 
 export const db = drizzle(client);
 

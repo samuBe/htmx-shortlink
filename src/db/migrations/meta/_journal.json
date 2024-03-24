@@ -1,12 +1,12 @@
 {
   "version": "5",
-  "dialect": "sqlite",
+  "dialect": "pg",
   "entries": [
     {
       "idx": 0,
       "version": "5",
-      "when": 1698745989453,
-      "tag": "0000_sad_texas_twister",
+      "when": 1711290641131,
+      "tag": "0000_eminent_celestials",
       "breakpoints": true
     }
   ]
