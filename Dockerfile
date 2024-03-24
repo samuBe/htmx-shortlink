@@ -12,7 +12,6 @@ COPY public public
 COPY tsconfig.json .
 COPY tailwind.config.js .
 # COPY public public
-RUN bun install tailwindcss
 RUN bunx tailwindcss -i src/input.css -o public/output.css --minify
 
 ENV NODE_ENV production
