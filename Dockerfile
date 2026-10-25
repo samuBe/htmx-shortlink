@@ -1,4 +1,4 @@
-FROM oven/bun AS css
+FROM oven/bun:1.4 AS css
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ COPY public public
 COPY tailwind.config.js .
 RUN bun run tailwindcss -i src/input.css -o public/output.css --minify
 
-FROM oven/bun
+FROM oven/bun:1.4
 
 WORKDIR /app
 
@@ -29,6 +29,8 @@ COPY tsconfig.json .
 COPY --from=css /app/public/output.css public/output.css
 
 ENV NODE_ENV=production
-CMD ["bun", "src/index.tsx"]
+# Apply pending migrations, but still start the server if they fail
+# so the site stays up; the error is visible in the logs
+CMD ["sh", "-c", "bun src/db/migrate.ts; exec bun src/index.tsx"]
 
 EXPOSE 3000

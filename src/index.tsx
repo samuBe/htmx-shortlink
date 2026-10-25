@@ -7,6 +7,8 @@ import staticPlugin from "@elysiajs/static";
 import "dotenv/config";
 import { createLink, getLongLink } from "./db/helpers";
 import { nanoid } from "nanoid";
+import { normalizeUrl } from "./url";
+import { createRateLimiter } from "./rate-limit";
 
 const Layout = (props: Html.PropsWithChildren<{ title?: string }>) => {
   return (
@@ -51,35 +53,15 @@ const Layout = (props: Html.PropsWithChildren<{ title?: string }>) => {
   );
 };
 
-function escapeRegExp(str: string) {
-  // Escape special characters in a string
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
+const ownHost = new URL(process.env.LINK ?? "http://localhost:3000").hostname;
 
-const isValidUrl = (urlString: string) => {
-  const urlPattern = new RegExp(
-    "^(https?:\\/\\/)?" + // validate protocol
-      "((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|" + // validate domain name
-      "((\\d{1,3}\\.){3}\\d{1,3}))" + // validate OR ip (v4) address
-      "(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*" + // validate port and path
-      "(\\?[;&a-z\\d%_.~+=-]*)?" + // validate query string
-      "(\\#[-a-z\\d_]*)?$",
-    "i"
-  ); // validate fragment locator
+// 10 new links per minute per client
+const allowSubmit = createRateLimiter(10, 60_000);
 
-  const domainRegex = new RegExp(
-    `^${escapeRegExp(
-      new URL(process.env.LINK as string).hostname ?? "localhost:3000"
-    )}`,
-    "i"
-  );
-
-  // Test if the URL matches the regular expression
-  return (
-    !!urlPattern.test(urlString) &&
-    !domainRegex.test(new URL(urlString).hostname)
-  );
-};
+const clientIp = (headers: Record<string, string | undefined>) =>
+  headers["x-real-ip"] ??
+  headers["x-forwarded-for"]?.split(",")[0].trim() ??
+  "unknown";
 
 const UrlEntry = (
   props: Html.PropsWithChildren<{ url?: string; errors?: string }>
@@ -97,7 +79,7 @@ const UrlEntry = (
           hx-trigger="change, keyup delay:100ms"
           value={props.url ?? ""}
           class="p-4 rounded-lg text-xl"
-          autofocus="true"
+          autofocus
         ></input>
         <button
           hx-post="/submit"
@@ -116,9 +98,20 @@ const UrlEntry = (
   );
 };
 
-let maxId = 2;
+const Message = (props: { title: string }) => (
+  <Layout>
+    <div class="flex flex-col items-center gap-4">
+      <h1 class="text-4xl font-extrabold text-center p-2" safe>
+        {props.title}
+      </h1>
+      <a href="/" class="underline text-blue-600 text-xl">
+        Create a new short link
+      </a>
+    </div>
+  </Layout>
+);
 
-const app = new Elysia()
+export const app = new Elysia()
   .use(html())
   .use(staticPlugin())
   .get("/", () => (
@@ -133,12 +126,11 @@ const app = new Elysia()
       </div>
     </Layout>
   ))
-  .get("/hello", () => <html>hello</html>)
   .post(
     "/validate",
     ({ body }) => {
-      if (body.link.length < 1) return "Enter something!";
-      return isValidUrl(body.link) ? "" : "Not a valid URL";
+      if (body.link.trim().length < 1) return "Enter something!";
+      return normalizeUrl(body.link, ownHost) ? "" : "Not a valid URL";
     },
     {
       body: t.Object({
@@ -148,17 +140,26 @@ const app = new Elysia()
   )
   .post(
     "/submit",
-    ({ body }) => {
+    async ({ body, headers }) => {
       const link = body.link;
-      if (link.length < 1) {
+      if (link.trim().length < 1) {
         return <UrlEntry url={link} errors="Enter something!" />;
       }
-      if (!isValidUrl(link)) {
+      const longLink = normalizeUrl(link, ownHost);
+      if (!longLink) {
         return <UrlEntry url={link} errors="Not a valid URL" />;
+      }
+      if (!allowSubmit(clientIp(headers))) {
+        return (
+          <UrlEntry
+            url={link}
+            errors="Too many links, please try again in a minute"
+          />
+        );
       }
       try {
         const id = nanoid(8);
-        createLink({ longLink: link, shortLink: id });
+        await createLink({ longLink, shortLink: id });
         const shorturl = `${process.env.LINK}/${id.toString()}`;
         return (
           <>
@@ -167,6 +168,7 @@ const app = new Elysia()
               <p
                 id="short-url"
                 class="p-4 rounded-lg text-xl bg-white text-black"
+                safe
               >
                 {shorturl}
               </p>
@@ -212,7 +214,7 @@ const app = new Elysia()
           </>
         );
       } catch (error) {
-        console.log(error);
+        console.error("Failed to create short link:", error);
         return (
           <UrlEntry
             url={link}
@@ -224,28 +226,21 @@ const app = new Elysia()
     { body: t.Object({ link: t.String() }) }
   )
   .get("/copy", () => "Copied your short url!")
-  .get("/robots.txt", ({ set }) => {
-    set.redirect = "/public/robots.txt";
-    set.status = 302;
-    return;
-  })
+  .get("/robots.txt", ({ redirect }) => redirect("/public/robots.txt", 302))
   .get(
     "/:id",
-    async ({ params: { id }, set }) => {
+    async ({ params: { id }, set, redirect }) => {
       try {
         const re = await getLongLink(id);
         if (!re) {
           set.status = 404;
-          set.redirect = "/";
-          return;
+          return <Message title="This short link doesn't exist" />;
         }
-        set.status = 302;
-        set.redirect = re;
+        return redirect(re, 302);
       } catch (error) {
-        console.log(error);
-        set.status = 404;
-        set.redirect = "/";
-        return;
+        console.error(`Failed to look up short link ${id}:`, error);
+        set.status = 500;
+        return <Message title="Something went wrong, please try again" />;
       }
     },
     {
@@ -256,9 +251,11 @@ const app = new Elysia()
   )
   .get("/redo", ({}) => {
     return <UrlEntry url={""} />;
-  })
-  .listen(process.env.PORT ?? 3000);
+  });
 
-console.log(
-  `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
-);
+if (import.meta.main) {
+  app.listen(process.env.PORT ?? 3000);
+  console.log(
+    `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
+  );
+}
